@@ -56,6 +56,10 @@ class GMusicPlaylistsProvider(backend.PlaylistsProvider):
             uri = 'gmusic:playlist:promoted'
             playlists[uri] = Playlist(uri=uri, name='Promoted', tracks=tracks)
 
+        # add thumbs down playlist
+        uri = 'gmusic:playlist:thumbsdown'
+        playlists[uri] = Playlist(uri=uri, name='Thumbs down [ACTION ONLY]', tracks=[])
+
         # load user playlists
         for playlist in self.backend.session.get_all_user_playlist_contents():
             tracks = []
@@ -126,4 +130,20 @@ class GMusicPlaylistsProvider(backend.PlaylistsProvider):
         raise NotImplementedError
 
     def save(self, playlist):
-        raise NotImplementedError
+        if playlist.uri == 'gmusic:playlist:thumbsdown':
+            if playlist.length == 1: # check does NOT work reliably due to mopidys mpd handling
+                logger.info(playlist.length)
+                logger.info(repr(playlist.tracks))
+                mopidy_track = playlist.tracks[0]
+                logger.info(repr(mopidy_track))
+                trackid = mopidy_track.uri.split(":")[2]
+                gmusic_track = self.backend.session.get_track_info(trackid)
+                logger.info(repr(gmusic_track))
+                gmusic_track['rating'] = 1 # 0 = no rating; 1 = down thumb; 5 = up thumb
+                self.backend.session.change_song_metadata(gmusic_track)
+            else:
+                logger.error("Tried to Thumb Down more than one song")
+                raise NotImplementedError
+        else:
+            logger.error("Changing Playlists is not supported, see Issue #136")
+            raise NotImplementedError

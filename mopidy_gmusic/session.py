@@ -160,3 +160,7 @@ class GMusicSession(object):
     def increment_song_playcount(self, song_id, plays=1, playtime=None):
         return self.api.increment_song_playcount(
             song_id, plays=plays, playtime=playtime)
+
+    @endpoint(default=None)
+    def change_song_metadata(self, songs):
+        return self.api.change_song_metadata(songs)
